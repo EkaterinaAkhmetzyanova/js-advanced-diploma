@@ -1,3 +1,4 @@
+/* eslint-disable prefer-destructuring */
 /* eslint-disable no-param-reassign */
 /* eslint-disable no-unused-vars */
 /* eslint-disable no-console */
@@ -38,8 +39,11 @@ export default class GameController {
 
   init() {
     this.gamePlay.drawUi(themes.prairie);
-    this.gamePlay.redrawPositions(this.generatePlayers(this.userPositions, this.userTypes.slice(0, 2)));
-    this.gamePlay.redrawPositions(this.generatePlayers(this.enemyPositions, this.enemyTypes));
+    const startUserTeam = this.userTypes.slice(0, 2);
+    const userPos = this.generatePlayers(this.userPositions, startUserTeam);
+    this.gamePlay.redrawPositions(userPos);
+    const enemyPos = this.generatePlayers(this.enemyPositions, this.enemyTypes);
+    this.gamePlay.redrawPositions(enemyPos);
 
     // TODO: add event listeners to gamePlay events
     this.gamePlay.addCellClickListener(this.onCellClick.bind(this));
@@ -60,8 +64,11 @@ export default class GameController {
     this.userTeam = [];
     this.enemyTeam = [];
     this.gamePlay.drawUi(themes.prairie);
-    this.gamePlay.redrawPositions(this.generatePlayers(this.userPositions, this.userTypes.slice(0, 2)));
-    this.gamePlay.redrawPositions(this.generatePlayers(this.enemyPositions, this.enemyTypes));
+    const startUserTeam = this.userTypes.slice(0, 2);
+    const userPos = this.generatePlayers(this.userPositions, startUserTeam);
+    this.gamePlay.redrawPositions(userPos);
+    const enemyPos = this.generatePlayers(this.enemyPositions, this.enemyTypes);
+    this.gamePlay.redrawPositions(enemyPos);
   }
 
   generatePlayers(teamPositions, teamArr) {
@@ -99,86 +106,109 @@ export default class GameController {
       position: this.position,
       scores: this.scores,
     };
-    this.stateService.save(GameState.from(savedGame));
+    const state = GameState.from(savedGame);
+    this.stateService.save(state);
     GamePlay.showMessage('Saved');
   }
 
   onLoadGameClick() {
     const loaded = this.stateService.load();
-    if (loaded) {
-      this.level = loaded.level;
-      this.player = loaded.activePlayer;
-      this.position = loaded.position;
-      this.scores = loaded.scores;
-      switch (loaded.level) {
-        case 1:
-          this.gamePlay.drawUi(themes.prairie);
-          break;
-        case 2:
-          this.gamePlay.drawUi(themes.desert);
-          break;
-        case 3:
-          this.gamePlay.drawUi(themes.arctic);
-          break;
-        case 4:
-          this.gamePlay.drawUi(themes.mountain);
-          break;
-        default:
-          this.gamePlay.drawUi(themes.prairie);
-          break;
-      }
-    } else {
+    if (!loaded) {
       GamePlay.showError('Something wrong...');
+    }
+    this.level = loaded.level;
+    this.player = loaded.activePlayer;
+    this.position = loaded.position;
+    this.scores = loaded.scores;
+    switch (loaded.level) {
+      case 1:
+        this.gamePlay.drawUi(themes.prairie);
+        break;
+      case 2:
+        this.gamePlay.drawUi(themes.desert);
+        break;
+      case 3:
+        this.gamePlay.drawUi(themes.arctic);
+        break;
+      case 4:
+        this.gamePlay.drawUi(themes.mountain);
+        break;
+      default:
+        this.gamePlay.drawUi(themes.prairie);
+        break;
     }
     this.gamePlay.redrawPositions(this.position);
   }
 
   newLevel() {
+    let userNum;
+    const userLevel = this.level - 1;
+    let enemyLength;
+
     if (this.level === 2) {
+      userNum = 1;
+      enemyLength = this.userTeam.length + userNum;
       this.gamePlay.drawUi(themes.desert);
       this.gamePlay.redrawPositions(this.position);
-      this.gamePlay.redrawPositions(this.teamNewLevel(this.userPositions, this.userTypes, 1, 1));
-      this.gamePlay.redrawPositions(this.teamNewLevel(this.enemyPositions, this.enemyTypes, 2, this.userTeam.length + 1));
+      const userPos = this.teamNewLevel(this.userPositions, this.userTypes, userLevel, userNum);
+      this.gamePlay.redrawPositions(userPos);
+      const enemyPos = this.teamNewLevel(this.enemyPositions, this.enemyTypes, this.level, enemyLength);
+      this.gamePlay.redrawPositions(enemyPos);
     }
     if (this.level === 3) {
       this.gamePlay.drawUi(themes.arctic);
+      userNum = 2;
+      enemyLength = this.userTeam.length + userNum;
       this.gamePlay.redrawPositions(this.position);
-      this.gamePlay.redrawPositions(this.teamNewLevel(this.userPositions, this.userTypes, 2, 2));
-      this.gamePlay.redrawPositions(this.teamNewLevel(this.enemyPositions, this.enemyTypes, 3, this.userTeam.length + 2));
+      const userPos = this.teamNewLevel(this.userPositions, this.userTypes, userLevel, userNum);
+      this.gamePlay.redrawPositions(userPos);
+      const enemyPos = this.teamNewLevel(this.enemyPositions, this.enemyTypes, this.level, enemyLength);
+      this.gamePlay.redrawPositions(enemyPos);
     }
     if (this.level === 4) {
+      userNum = 2;
       this.gamePlay.drawUi(themes.mountain);
       this.gamePlay.redrawPositions(this.position);
-      this.gamePlay.redrawPositions(this.teamNewLevel(this.userPositions, this.userTypes, 3, 2));
-      this.gamePlay.redrawPositions(this.teamNewLevel(this.enemyPositions, this.enemyTypes, 4, this.userTeam.length + 2));
+      const userPos = this.teamNewLevel(this.userPositions, this.userTypes, userLevel, userNum);
+      this.gamePlay.redrawPositions(userPos);
+      const enemyPos = this.teamNewLevel(this.enemyPositions, this.enemyTypes, this.level, enemyLength);
+      this.gamePlay.redrawPositions(enemyPos);
     }
-    // default:
-    //   this.gamePlay.drawUi(themes.prairie);
-    //   this.gamePlay.redrawPositions(this.generatePlayers(this.userPositions, this.userTypes.slice(0, 2)));
-    //   this.gamePlay.redrawPositions(this.generatePlayers(this.enemyPositions, this.enemyTypes));
-    //   break;
   }
 
   // generation of new characters in accordance with a current level
   teamNewLevel(teamPositions, teamArr, level, charAmount) {
     const team = generateTeam(teamArr, level, charAmount);
     for (const char of team) {
-      this.position.push(new PositionedCharacter(char, this.getRandomPosition(teamPositions)));
+      const pos = this.getRandomPosition(teamPositions);
+      const placedChar = new PositionedCharacter(char, pos);
+      this.position.push(placedChar);
     }
     return this.position;
   }
 
   checkGameStatus() {
     // to get array of current characters
-    this.enemyTeam = this.position.filter((element) => ['vampire', 'undead', 'daemon'].includes(element.character.type));
-    this.userTeam = this.position.filter((element) => ['bowman', 'swordsman', 'magician'].includes(element.character.type));
+    this.enemyTeam = this.position.filter((el) => ['vampire', 'undead', 'daemon'].includes(el.character.type));
+    this.userTeam = this.position.filter((el) => ['bowman', 'swordsman', 'magician'].includes(el.character.type));
 
     // check status of the game
+    if (this.userTeam.length === 0) {
+      GamePlay.showMessage('Game over');
+      this.gamePlay.cellClickListeners = [];
+      this.gamePlay.cellEnterListeners = [];
+      this.gamePlay.cellLeaveListeners = [];
+    }
+    if (this.level >= 4 && this.enemyTeam.length === 0) {
+      GamePlay.showMessage('Congrats! You`re win!');
+      this.gamePlay.cellClickListeners = [];
+      this.gamePlay.cellEnterListeners = [];
+      this.gamePlay.cellLeaveListeners = [];
+    }
     if (this.enemyTeam.length === 0) {
       this.level += 1;
       for (const user of this.userTeam) {
         this.score += user.character.health;
-        console.log(this.score);
         user.character.level += 1;
         user.character.health += 80;
         if (user.character.health > 100) {
@@ -187,60 +217,47 @@ export default class GameController {
         user.character.attack = Math.max(user.character.attack, (user.character.attack * (80 + user.character.health)) / 100);
         user.character.defence = Math.max(user.character.defence, (user.character.defence * (80 + user.character.health)) / 100);
       }
-      // this.userTeam.forEach((char) => Character.levelUp.call(char));
       this.newLevel();
-    } else if (this.userTeam.length === 0) {
-      GamePlay.showMessage('Game over');
-      this.gamePlay.cellClickListeners = [];
-      this.gamePlay.cellEnterListeners = [];
-      this.gamePlay.cellLeaveListeners = [];
-    } else if (this.level >= 4 && this.enemyTeam.length === 0) {
-      GamePlay.showMessage('Congrats! You`re win!');
-      this.gamePlay.cellClickListeners = [];
-      this.gamePlay.cellEnterListeners = [];
-      this.gamePlay.cellLeaveListeners = [];
     }
   }
 
   onCellClick(index) {
     // TODO: react to click
-    const currentPosition = this.position.find((element) => element.position === index);
+    const currentPosition = this.position.find((el) => el.position === index);
 
     // to get cells occupied by enemy team
-    this.occupiedCells = this.position.filter((pos) => (pos.character.type === 'daemon' || pos.character.type === 'undead' || pos.character.type === 'vampire')).map((pos) => pos.position);
+    this.occupiedCells = this.position.filter((pos) => ['vampire', 'undead', 'daemon'].includes(pos.character.type));
+    this.occupiedCells = this.occupiedCells.map((pos) => pos.position);
 
     // character selection
-    if (currentPosition !== undefined && !this.occupiedCells.includes(index)) {
-      this.position.forEach((element) => this.gamePlay.deselectCell(element.position));
+    if (this.occupiedCells.includes(index) && !this.attackOpt.includes(index)) {
+      GamePlay.showError('Please choose a relevant character');
+    } else if (currentPosition && !this.occupiedCells.includes(index)) {
+      this.position.forEach((el) => this.gamePlay.deselectCell(el.position));
       this.gamePlay.selectCell(index);
       this.selected = currentPosition;
       this.movements = this.getMovesOptions(this.selected.position, this.selected.character.moveDistance);
       this.attackOpt = this.getAttackOptions(this.selected.position, this.selected.character.attackDistance);
-    } else if (this.movements.includes(index) && !this.occupiedCells.includes(index)) {
-      // if (this.player !== 1) {
-      //   this.enemyAction();
-      // }
+    }
+    // to make a move
+    if (this.movements.includes(index) && !this.occupiedCells.includes(index)) {
       this.gamePlay.deselectCell(this.selected.position);
       this.selected.position = index;
       this.gamePlay.redrawPositions(this.position);
       this.gamePlay.selectCell(index);
-      this.enemyAction();
-    } else if (currentPosition && !(this.attackOpt.includes(index))) {
-      GamePlay.showError('Please choose a relevant character');
-    }
-
-    // user to attack enemy
-    if (this.selected && this.attackOpt.includes(index) && this.occupiedCells.includes(index)) {
+      this.timeout = setTimeout(this.enemyAction.bind(this), 200);
+    } else if (this.selected && this.attackOpt.includes(index) && this.occupiedCells.includes(index)) {
+      // user to attack enemy
       const target = currentPosition;
       this.toAttack(index, this.selected.character, target.character);
-      this.enemyAction();
+      this.timeout = setTimeout(this.enemyAction.bind(this), 200);
       this.checkGameStatus();
     }
   }
 
   onCellEnter(index) {
     // TODO: react to mouse enter
-    const currentPosition = this.position.find((element) => element.position === index);
+    const currentPosition = this.position.find((el) => el.position === index);
 
     // tooltip
     const icons = {
@@ -249,6 +266,7 @@ export default class GameController {
       defence: '\u{1F6E1}',
       health: '\u{2764}',
     };
+
     if (currentPosition) {
       const message = `${icons.level}${currentPosition.character.level}${icons.attack}${currentPosition.character.attack}${icons.defence}${currentPosition.character.defence}${icons.health}${currentPosition.character.health}`;
       this.gamePlay.showCellTooltip(message, index);
@@ -256,23 +274,23 @@ export default class GameController {
       if (['vampire', 'undead', 'daemon'].includes(currentPosition.character.type)) {
         this.gamePlay.setCursor(cursors.notallowed);
       }
-    } else {
-      this.gamePlay.setCursor(cursors.auto);
     }
-    // change cursors
-    if (this.selected && !currentPosition) {
-      this.movements = this.getMovesOptions(this.selected.position, this.selected.character.moveDistance);
-      // console.log(this.movements);
-      if (this.movements.includes(index)) {
-        this.gamePlay.selectCell(index, 'green');
-        this.gamePlay.setCursor(cursors.pointer);
-      }
-    }
-    if (this.selected && currentPosition && ['vampire', 'undead', 'daemon'].includes(currentPosition.character.type)) {
-      this.attackOpt = this.getAttackOptions(this.selected.position, this.selected.character.attackDistance);
-      if (this.attackOpt.includes(index)) {
-        this.gamePlay.selectCell(index, 'red');
-        this.gamePlay.setCursor(cursors.crosshair);
+    // to change cursors
+    if (this.selected) {
+      if (!currentPosition) {
+        this.movements = this.getMovesOptions(this.selected.position, this.selected.character.moveDistance);
+        if (this.movements.includes(index)) {
+          this.gamePlay.selectCell(index, 'green');
+          this.gamePlay.setCursor(cursors.pointer);
+        } else {
+          this.gamePlay.setCursor(cursors.auto);
+        }
+      } else if (currentPosition && ['vampire', 'undead', 'daemon'].includes(currentPosition.character.type)) {
+        this.attackOpt = this.getAttackOptions(this.selected.position, this.selected.character.attackDistance);
+        if (this.attackOpt.includes(index)) {
+          this.gamePlay.selectCell(index, 'red');
+          this.gamePlay.setCursor(cursors.crosshair);
+        }
       }
     }
   }
@@ -280,7 +298,7 @@ export default class GameController {
   onCellLeave(index) {
     // TODO: react to mouse leave
     this.gamePlay.hideCellTooltip(index);
-    if (this.selected !== undefined && this.selected.position !== index) {
+    if (this.selected && this.selected.position !== index) {
       this.gamePlay.deselectCell(index);
     }
   }
@@ -299,24 +317,25 @@ export default class GameController {
   }
 
   getMovesOptions(currentPosition, distance) {
-    const columnIndex = currentPosition % this.gamePlay.boardSize;
-    const rowIndex = Math.floor(currentPosition / this.gamePlay.boardSize);
+    const boardSize = this.gamePlay.boardSize;
+    const columnIndex = currentPosition % boardSize;
+    const rowIndex = Math.floor(currentPosition / boardSize);
     const availableIndexArr = [];
     for (let i = 1; i <= distance; i += 1) {
       // one column to the right
       let availableColumnIndex = columnIndex + i;
-      if (availableColumnIndex < this.gamePlay.boardSize) {
+      if (availableColumnIndex < boardSize) {
         availableIndexArr.push(this.area[rowIndex][availableColumnIndex]);
       }
 
       // one line down
       let availableRowIndex = rowIndex + i;
-      if (availableRowIndex < this.gamePlay.boardSize) {
+      if (availableRowIndex < boardSize) {
         availableIndexArr.push(this.area[availableRowIndex][columnIndex]);
       }
 
       // diagonal down/right
-      if ((availableRowIndex < this.gamePlay.boardSize) && (availableColumnIndex < this.gamePlay.boardSize)) {
+      if ((availableRowIndex < boardSize) && (availableColumnIndex < boardSize)) {
         availableIndexArr.push(this.area[availableRowIndex][availableColumnIndex]);
       }
 
@@ -327,7 +346,7 @@ export default class GameController {
       }
 
       // diagonal down/left
-      if ((availableColumnIndex >= 0) && (availableRowIndex < this.gamePlay.boardSize)) {
+      if ((availableColumnIndex >= 0) && (availableRowIndex < boardSize)) {
         availableIndexArr.push(this.area[availableRowIndex][availableColumnIndex]);
       }
 
@@ -344,7 +363,7 @@ export default class GameController {
 
       // diagonal up/right
       availableColumnIndex = columnIndex + i;
-      if ((availableColumnIndex < this.gamePlay.boardSize) && (availableRowIndex >= 0)) {
+      if ((availableColumnIndex < boardSize) && (availableRowIndex >= 0)) {
         availableIndexArr.push(this.area[availableRowIndex][availableColumnIndex]);
       }
     }
@@ -352,8 +371,9 @@ export default class GameController {
   }
 
   getAttackOptions(currentPosition, distance) {
-    const columnIndex = currentPosition % this.gamePlay.boardSize;
-    const rowIndex = Math.floor(currentPosition / this.gamePlay.boardSize);
+    const boardSize = this.gamePlay.boardSize;
+    const columnIndex = currentPosition % boardSize;
+    const rowIndex = Math.floor(currentPosition / boardSize);
     let availableIndexArr = [];
     let upwardAttack = rowIndex - distance;
     let downAttack = rowIndex + distance;
@@ -361,28 +381,29 @@ export default class GameController {
     let rightAttack = columnIndex + distance;
     if (upwardAttack < 0) {
       upwardAttack = 0;
-    } else if (downAttack > this.gamePlay.boardSize - 1) {
-      downAttack = this.gamePlay.boardSize - 1;
+    } else if (downAttack > boardSize - 1) {
+      downAttack = boardSize - 1;
     } else if (leftAttack < 0) {
       leftAttack = 0;
-    } else if (rightAttack > this.gamePlay.boardSize - 1) {
-      rightAttack = this.gamePlay.boardSize - 1;
+    } else if (rightAttack > boardSize - 1) {
+      rightAttack = boardSize - 1;
     }
     for (let i = upwardAttack; i <= downAttack; i++) {
       for (let j = leftAttack; j <= rightAttack; j++) {
         availableIndexArr.push(this.area[i][j]);
       }
     }
-    availableIndexArr = availableIndexArr.filter((element) => element !== currentPosition);
-    availableIndexArr = availableIndexArr.filter((element) => element >= 0 && element <= 63);
+    availableIndexArr = availableIndexArr.filter((el) => el !== currentPosition);
+    availableIndexArr = availableIndexArr.filter((el) => el >= 0 && el <= 63);
     return availableIndexArr;
   }
 
   toAttack(index, activeChar, target) {
-    const damageScores = Math.max(activeChar.attack - target.defence, activeChar.attack * 0.1);
+    const damageScores = Math.floor(Math.max(activeChar.attack - target.defence, activeChar.attack * 0.1));
     target.health -= damageScores;
     if (target.health <= 0) {
       target.health = 0;
+      this.selected = null;
       this.position = this.position.filter((char) => char.position !== index);
     }
     this.gamePlay.deselectCell(index);
@@ -395,18 +416,22 @@ export default class GameController {
   enemyAction() {
     this.gamePlay.deselectCell(this.selected.position);
     this.player = 0;
-    this.enemyTeam = this.position.filter((char) => char.character.type === 'daemon' || char.character.type === 'undead' || char.character.type === 'vampire');
-    this.userTeam = this.position.filter((element) => ['bowman', 'swordsman', 'magician'].includes(element.character.type));
-
-    const randomEnemyChar = () => this.enemyTeam[Math.floor(Math.random() * this.enemyTeam.length)];
+    this.enemyTeam = this.position.filter((char) => ['vampire', 'undead', 'daemon'].includes(char.character.type));
+    this.userTeam = this.position.filter((el) => ['bowman', 'swordsman', 'magician'].includes(el.character.type));
+    const randomNum = Math.floor(Math.random() * this.enemyTeam.length);
+    const randomEnemyChar = () => this.enemyTeam[randomNum];
     if (randomEnemyChar()) {
-      this.movements = this.getMovesOptions(randomEnemyChar().position, randomEnemyChar().character.moveDistance);
-      this.attackOpt = this.getAttackOptions(randomEnemyChar().position, randomEnemyChar().character.attackDistance);
+      const moves = randomEnemyChar().character.moveDistance;
+      const attacks = randomEnemyChar().character.attackDistance;
+      const randPos = randomEnemyChar().position;
+      this.movements = this.getMovesOptions(randPos, moves);
+      this.attackOpt = this.getAttackOptions(randPos, attacks);
 
       // if there is someone to be attacked
       for (const user of this.userTeam) {
         if (this.attackOpt.indexOf(user.position) !== -1) {
-          this.toAttack(user.position, randomEnemyChar().character, user.character);
+          const randChar = randomEnemyChar().character;
+          this.toAttack(user.position, randChar, user.character);
           this.player = 1;
           return;
         }
